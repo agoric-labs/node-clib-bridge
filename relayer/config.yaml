@@ -1,0 +1,36 @@
+global:
+  timeout: 10s
+  lite-cache-size: 20
+chains:
+- key: testkey
+  chain-id: ibc0
+  rpc-addr: http://localhost:26657
+  account-prefix: agoric
+  gas: 200000
+  default-denom: uagstake
+  trusting-period: 336h
+- key: testkey
+  chain-id: ibc1
+  rpc-addr: http://localhost:26557
+  account-prefix: agoric
+  gas: 200000
+  default-denom: uagstake
+  trusting-period: 336h
+paths:
+  zero:
+    src:
+      chain-id: ibc1
+      client-id: ibczeroclient
+      connection-id: ibczerolink
+      channel-id: channeltokbmnfb
+      port-id: portwhaet
+      order: ORDERED
+    dst:
+      chain-id: ibc0
+      client-id: ibconeclient
+      connection-id: ibconelink
+      channel-id: channeltonfqji
+      port-id: portbvmnfb
+      order: ORDERED
+    strategy:
+      type: naive
