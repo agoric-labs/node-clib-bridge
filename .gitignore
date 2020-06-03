@@ -1,5 +1,4 @@
 libclib.*
 node_modules
 build
-binding.gyp
 *.tgz
