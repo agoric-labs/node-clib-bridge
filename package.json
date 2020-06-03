@@ -1,0 +1,20 @@
+{
+  "name": "node-clib-bridge",
+  "version": "0.3.0",
+  "description": "Synchronous bridge from Node.js to a multithreaded C library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:gyp": "make compile-gyp",
+    "build:gyp-debug": "make compile-gyp GYP_DEBUG=--debug"
+  },
+  "dependencies": {
+    "bindings": "^1.2.1"
+  },
+  "devDependencies": {
+    "napi-thread-safe-callback": "0.0.6",
+    "node-addon-api": "^1.7.1"
+  },
+  "author": "Agoric",
+  "license": "Apache-2.0"
+}
