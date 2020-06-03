@@ -12,13 +12,13 @@
       "msvs_settings": {
         "VCCLCompilerTool": { "ExceptionHandling": 1 },
       },
-      "sources": [ "bridge-node.cc" ],
+      "sources": [ "bridge-node.cc", "<!(pwd)/libclib.so" ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")",
         "<!@(node -p \"require('napi-thread-safe-callback').include\")"
       ],
       "dependencies": ["<!(node -p \"require('node-addon-api').gyp\")"],
-      "libraries": [ "-Wl,-rpath,@CLIBDIR@", "@CLIBDIR@/@CLIB@" ],
+      "libraries": [ "-Wl,-rpath,<!(pwd)", "<!(pwd)/libclib.so" ],
       "conditions": [
         ['OS=="mac"', {
           'cflags+': ['-fvisibility=hidden'],
@@ -29,7 +29,15 @@
         ['OS=="win"', {
           'defines': [ '_HAS_EXCEPTIONS=1' ]
         }]
-      ]
+      ],
+      "actions": [
+        {
+            'action_name': 'compile-clib',
+            'inputs': ['Makefile'],
+            'outputs': ['<!(pwd)/libclib.so'],
+            'action': ['make', 'compile-clib', 'CLIB=<!(pwd)/libclib.so'],
+        }
+      ],
     },
   ],
 }
