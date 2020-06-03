@@ -1,5 +1,5 @@
 #! /usr/bin/env node
-const { runClib, sendClib } = require('bindings')('clib.node');
+const { runClib, sendClib } = require('.');
 
 let nodePort = 0;
 function fromClib(port, str, replier) {
