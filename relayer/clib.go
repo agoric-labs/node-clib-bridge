@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iqlusioninc/relayer/cmd"
 	"github.com/iqlusioninc/relayer/relayer"
 )
 
@@ -57,17 +58,10 @@ func RunClib(nodePort C.int, toNode C.sendFunc, clibArgs []*C.char) C.int {
 	for i, s := range clibArgs {
 		args[i] = C.GoString(s)
 	}
-	fmt.Println("Starting Clib with args", args)
+	// fmt.Println("Starting relayer with args", args)
 	go func() {
-		for i := 0; i < 3; i++ {
-			fmt.Println("Call", i)
-			s, err := relayer.SendToNode(true, fmt.Sprintf("%d", i))
-			if err != nil {
-				fmt.Println("Error", err)
-			} else {
-				fmt.Println("Return", s)
-			}
-		}
+		os.Args = args
+		cmd.Execute()
 		os.Exit(0)
 	}()
 

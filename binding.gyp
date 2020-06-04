@@ -33,7 +33,7 @@
       "actions": [
         {
             'action_name': 'compile-clib',
-            'inputs': ['Makefile'],
+            'inputs': ['Makefile', 'relayer/clib.go'],
             'outputs': ['<!(pwd)/libclib.so'],
             'action': ['make', 'compile-clib', 'CLIB=<!(pwd)/libclib.so'],
         }

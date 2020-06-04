@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,6 +41,19 @@ func startCmd() *cobra.Command {
 			}
 
 			path := config.Paths.MustGet(args[0])
+
+			if relayer.SendToNode != nil {
+				// Wait for Node to acknowledge.
+				bz, err := json.Marshal(&path)
+				if err != nil {
+					return err
+				}
+				_, err = relayer.SendToNode(true, string(bz))
+				if err != nil {
+					return err
+				}
+			}
+
 			done, err := relayer.RunStrategy(c[src], c[dst], path.MustGetStrategy(), path.Ordered())
 			if err != nil {
 				return err
@@ -60,7 +74,7 @@ func trapSignal(done func()) {
 
 	// wait for a signal
 	sig := <-sigCh
-	fmt.Println("Signal Recieved:", sig.String())
+	fmt.Println("Signal Received:", sig.String())
 	close(sigCh)
 
 	// call the cleanup func
