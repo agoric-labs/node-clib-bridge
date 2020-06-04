@@ -34,7 +34,7 @@ func RunClib(nodePort C.int, toNode C.sendFunc, clibArgs []*C.char) C.int {
 		os.Exit(1)
 	}
 	singleton = true
-	relayer.SendToNode = func(needReply bool, str string) (string, error) {
+	relayer.SendToController = func(needReply bool, str string) (string, error) {
 		var rPort int
 		if needReply {
 			lastReply++

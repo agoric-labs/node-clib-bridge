@@ -1,3 +1,3 @@
 package relayer
 
-var SendToNode func(needReply bool, str string) (string, error)
+var SendToController func(needReply bool, str string) (string, error)
