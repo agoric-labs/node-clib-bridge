@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/iqlusioninc/relayer/relayer"
@@ -37,6 +38,7 @@ func transactionCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		fullPathCmd(),
+		linkThenStartCmd(),
 		relayMsgsCmd(),
 		transferCmd(),
 		flags.LineBreak,
@@ -158,20 +160,6 @@ func fullPathCmd() *cobra.Command {
 				return err
 			}
 
-			path := config.Paths.MustGet(args[0])
-
-			if relayer.SendToController != nil {
-				// Wait for Node to acknowledge.
-				action := relayer.PathAction{
-					Path: path,
-					Type: "RELAYER_PATH_LINK",
-				}
-				cont, err := relayer.ControllerUpcall(&action)
-				if !cont {
-					return err
-				}
-			}
-
 			to, err := getTimeout(cmd)
 			if err != nil {
 				return err
@@ -189,6 +177,24 @@ func fullPathCmd() *cobra.Command {
 		},
 	}
 
+	return timeoutFlag(cmd)
+}
+
+func linkThenStartCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "link-then-start [path-name]",
+		Short: "wait for a link to come up, then start relaying packets",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			linkCmd := fullPathCmd()
+			for err := linkCmd.RunE(cmd, args); err != nil; err = linkCmd.RunE(cmd, args) {
+				fmt.Printf("retrying link: %s\n", err)
+				time.Sleep(1 * time.Second)
+			}
+			sCmd := startCmd()
+			return sCmd.RunE(cmd, args)
+		},
+	}
 	return timeoutFlag(cmd)
 }
 
