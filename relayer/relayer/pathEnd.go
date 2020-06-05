@@ -48,7 +48,7 @@ func (src *PathEnd) getOrder() ibctypes.Order {
 
 var marshalledChains = map[PathEnd]*Chain{}
 
-func marshalChain(c *Chain) PathEnd {
+func MarshalChain(c *Chain) PathEnd {
 	pe := *c.PathEnd
 	if _, ok := marshalledChains[pe]; !ok {
 		marshalledChains[pe] = c
@@ -56,14 +56,14 @@ func marshalChain(c *Chain) PathEnd {
 	return pe
 }
 
-func unmarshalChain(pe PathEnd) *Chain {
+func UnmarshalChain(pe PathEnd) *Chain {
 	if c, ok := marshalledChains[pe]; ok {
 		return c
 	}
 	return nil
 }
 
-func marshalMsgs(sdkm []sdk.Msg) []DeliverMsg {
+func MarshalMsgs(sdkm []sdk.Msg) []DeliverMsg {
 	dm := make([]DeliverMsg, 0, len(sdkm))
 	for _, sm := range sdkm {
 		bz, err := json.Marshal(sm)
@@ -112,7 +112,7 @@ func marshalMsgs(sdkm []sdk.Msg) []DeliverMsg {
 	return dm
 }
 
-func unmarshalMsgs(dm []DeliverMsg) []sdk.Msg {
+func UnmarshalMsgs(dm []DeliverMsg) []sdk.Msg {
 	sdkm := make([]sdk.Msg, 0, len(dm))
 	for _, d := range dm {
 		bz := []byte(d.Msg)

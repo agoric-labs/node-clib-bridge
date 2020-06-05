@@ -9,12 +9,9 @@ package main
 // }
 import "C"
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/iqlusioninc/relayer/relayer"
 )
 
 type goReturn = struct {
@@ -90,27 +87,8 @@ func ReplyToClib(replyPort C.int, isError C.int, str C.Body) C.int {
 //export SendToClib
 func SendToClib(port C.int, str C.Body) C.Body {
 	goStr := C.GoString(str)
-	var action relayer.DeliverMsgsAction
-	if err := json.Unmarshal([]byte(goStr), &action); err == nil {
-		switch action.Type {
-		case "RELAYER_SEND":
-			rm := relayer.RelayMsgs{
-				Src: unmarshalMsgs(action.SrcMsgs),
-				Dst: unmarshalMsgs(action.DstMsgs),
-			}
-			src := unmarshalChain(action.Src)
-			dst := unmarshalChain(action.Dst)
-			if src == nil || dst == nil {
-				return C.CString("false")
-			}
-			rm.Send(src, dst)
-			if !rm.success {
-				return C.CString("0")
-			}
-			return C.CString(fmt.Sprintf("%d", len(rm.Src) + len(rm.Dst))
-		}
-	}
-	return C.CString("false")
+	fmt.Println("Received", goStr)
+	return C.CString("true")
 }
 
 // Do nothing in main.

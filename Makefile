@@ -16,8 +16,7 @@ node-compile-gyp:
 
 # Only run from the package.json build:gyp script
 compile-gyp: #create-binding-gyp
-	node-gyp configure build $(GYP_DEBUG) || { status=$$?; rm -f binding.gyp; exit $$status; }
-#	rm -f binding.gyp
+	node-gyp configure build $(GYP_DEBUG)
 
 create-binding-gyp:
 	sed -e 's%@CLIBDIR@%$(CLIBDIR)%g; s%@CLIB@%$(CLIB)%g' binding.gyp.in > binding.gyp

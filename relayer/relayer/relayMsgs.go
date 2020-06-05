@@ -48,21 +48,26 @@ func (r *RelayMsgs) Success() bool {
 }
 
 // Send sends the messages with appropriate output
-func (r *RelayMsgs) Send(src, dst *Chain) {
+func (r *RelayMsgs) Send(src, dst *Chain) bool {
 	if SendToController != nil {
 		action := &DeliverMsgsAction{
-			SrcMsgs: marshalMsgs(r.Src),
-			Src:     marshalChain(src),
-			DstMsgs: marshalMsgs(r.Dst),
-			Dst:     marshalChain(dst),
+			SrcMsgs: MarshalMsgs(r.Src),
+			Src:     MarshalChain(src),
+			DstMsgs: MarshalMsgs(r.Dst),
+			Dst:     MarshalChain(dst),
 			Type:    "RELAYER_SEND",
 		}
 
 		// Get the messages that are actually sent.
 		cont, err := ControllerUpcall(&action)
 		if !cont {
-			r.success = err == nil
-			return
+			if err != nil {
+				fmt.Println("Error calling controller", err)
+				r.success = false
+			} else {
+				r.success = true
+			}
+			return r.success
 		}
 	}
 
@@ -97,9 +102,10 @@ func (r *RelayMsgs) Send(src, dst *Chain) {
 
 	if failed {
 		r.success = false
-		return
+		return r.success
 	}
 	r.success = true
+	return r.success
 }
 
 func getMsgAction(msgs []sdk.Msg) string {
