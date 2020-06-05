@@ -7,11 +7,24 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+type DeliverMsg struct {
+	Msg  string `json:"msg"`
+	Type string `json:"type"`
+}
+
+type DeliverMsgsAction struct {
+	SrcMsgs []DeliverMsg `json:"src_msgs"`
+	Src     PathEnd      `json:"src"`
+	DstMsgs []DeliverMsg `json:"dst_msgs"`
+	Dst     PathEnd      `json:"dst"`
+	Type    string       `json:"type"`
+}
+
 // RelayMsgs contains the msgs that need to be sent to both a src and dst chain
 // after a given relay round
 type RelayMsgs struct {
-	Src []sdk.Msg
-	Dst []sdk.Msg
+	Src []sdk.Msg `json:"src"`
+	Dst []sdk.Msg `json:"dst"`
 
 	last    bool
 	success bool
@@ -36,6 +49,23 @@ func (r *RelayMsgs) Success() bool {
 
 // Send sends the messages with appropriate output
 func (r *RelayMsgs) Send(src, dst *Chain) {
+	if SendToController != nil {
+		action := &DeliverMsgsAction{
+			SrcMsgs: marshalMsgs(r.Src),
+			Src:     marshalChain(src),
+			DstMsgs: marshalMsgs(r.Dst),
+			Dst:     marshalChain(dst),
+			Type:    "RELAYER_SEND",
+		}
+
+		// Get the messages that are actually sent.
+		cont, err := ControllerUpcall(&action)
+		if !cont {
+			r.success = err == nil
+			return
+		}
+	}
+
 	var failed = false
 	// TODO: maybe figure out a better way to indicate error here?
 

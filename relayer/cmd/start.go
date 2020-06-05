@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -43,13 +42,12 @@ func startCmd() *cobra.Command {
 			path := config.Paths.MustGet(args[0])
 
 			if relayer.SendToController != nil {
-				// Wait for Node to acknowledge.
-				bz, err := json.Marshal(&path)
-				if err != nil {
-					return err
+				action := relayer.PathAction{
+					Path: path,
+					Type: "RELAYER_PATH_START",
 				}
-				_, err = relayer.SendToController(true, string(bz))
-				if err != nil {
+				cont, err := relayer.ControllerUpcall(&action)
+				if !cont {
 					return err
 				}
 			}

@@ -1,6 +1,8 @@
 package relayer
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,6 +44,159 @@ func OrderFromString(order string) ibctypes.Order {
 
 func (src *PathEnd) getOrder() ibctypes.Order {
 	return OrderFromString(strings.ToUpper(src.Order))
+}
+
+var marshalledChains = map[PathEnd]*Chain{}
+
+func marshalChain(c *Chain) PathEnd {
+	pe := *c.PathEnd
+	if _, ok := marshalledChains[pe]; !ok {
+		marshalledChains[pe] = c
+	}
+	return pe
+}
+
+func unmarshalChain(pe PathEnd) *Chain {
+	if c, ok := marshalledChains[pe]; ok {
+		return c
+	}
+	return nil
+}
+
+func marshalMsgs(sdkm []sdk.Msg) []DeliverMsg {
+	dm := make([]DeliverMsg, 0, len(sdkm))
+	for _, sm := range sdkm {
+		bz, err := json.Marshal(sm)
+		if err != nil {
+			continue
+		}
+		d := DeliverMsg{
+			Msg: string(bz),
+		}
+		switch v := sm.(type) {
+		case tmclient.MsgUpdateClient:
+			d.Type = "MsgUpdateClient"
+		case tmclient.MsgCreateClient:
+			d.Type = "MsgCreateClient"
+		case connTypes.MsgConnectionOpenInit:
+			d.Type = "MsgConnectionOpenInit"
+		case connTypes.MsgConnectionOpenTry:
+			d.Type = "MsgConnectionOpenTry"
+		case connTypes.MsgConnectionOpenAck:
+			d.Type = "MsgConnectionOpenAck"
+		case connTypes.MsgConnectionOpenConfirm:
+			d.Type = "MsgConnectionOpenConfirm"
+		case chanTypes.MsgChannelOpenInit:
+			d.Type = "MsgChannelOpenInit"
+		case chanTypes.MsgChannelOpenTry:
+			d.Type = "MsgChannelOpenTry"
+		case chanTypes.MsgChannelOpenAck:
+			d.Type = "MsgChannelOpenAck"
+		case chanTypes.MsgChannelOpenConfirm:
+			d.Type = "MsgChannelOpenConfirm"
+		case chanTypes.MsgChannelCloseInit:
+			d.Type = "MsgChannelCloseInit"
+		case chanTypes.MsgChannelCloseConfirm:
+			d.Type = "MsgChannelCloseConfirm"
+		case chanTypes.MsgPacket:
+			d.Type = "MsgPacket"
+		case chanTypes.MsgTimeout:
+			d.Type = "MsgTimeout"
+		case chanTypes.MsgAcknowledgement:
+			d.Type = "MsgAcknowledgement"
+		default:
+			d.Type = fmt.Sprintf("%T", v)
+		}
+		dm = append(dm, d)
+	}
+	return dm
+}
+
+func unmarshalMsgs(dm []DeliverMsg) []sdk.Msg {
+	sdkm := make([]sdk.Msg, 0, len(dm))
+	for _, d := range dm {
+		bz := []byte(d.Msg)
+		switch d.Type {
+		case "MsgUpdateClient":
+			var sm tmclient.MsgUpdateClient
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgCreateClient":
+			var sm tmclient.MsgCreateClient
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgConnectionOpenInit":
+			var sm connTypes.MsgConnectionOpenInit
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgConnectionOpenTry":
+			var sm connTypes.MsgConnectionOpenTry
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgConnectionOpenAck":
+			var sm connTypes.MsgConnectionOpenAck
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgConnectionOpenConfirm":
+			var sm connTypes.MsgConnectionOpenConfirm
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelOpenInit":
+			var sm chanTypes.MsgChannelOpenInit
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelOpenTry":
+			var sm chanTypes.MsgChannelOpenTry
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelOpenAck":
+			var sm chanTypes.MsgChannelOpenAck
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelOpenConfirm":
+			var sm chanTypes.MsgChannelOpenConfirm
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelCloseInit":
+			var sm chanTypes.MsgChannelCloseInit
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgChannelCloseConfirm":
+			var sm chanTypes.MsgChannelCloseConfirm
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgPacket":
+			var sm chanTypes.MsgPacket
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgTimeout":
+			var sm chanTypes.MsgTimeout
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		case "MsgAcknowledgement":
+			var sm chanTypes.MsgAcknowledgement
+			if err := json.Unmarshal(bz, &sm); err == nil {
+				sdkm = append(sdkm, sm)
+			}
+		default:
+			fmt.Printf("Message type %s not handled\n", d.Type)
+		}
+	}
+	return sdkm
 }
 
 // UpdateClient creates an sdk.Msg to update the client on src with data pulled from dst

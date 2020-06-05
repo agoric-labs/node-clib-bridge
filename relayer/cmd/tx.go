@@ -158,6 +158,20 @@ func fullPathCmd() *cobra.Command {
 				return err
 			}
 
+			path := config.Paths.MustGet(args[0])
+
+			if relayer.SendToController != nil {
+				// Wait for Node to acknowledge.
+				action := relayer.PathAction{
+					Path: path,
+					Type: "RELAYER_PATH_LINK",
+				}
+				cont, err := relayer.ControllerUpcall(&action)
+				if !cont {
+					return err
+				}
+			}
+
 			to, err := getTimeout(cmd)
 			if err != nil {
 				return err
