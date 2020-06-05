@@ -1,6 +1,6 @@
 {
   "name": "@agoric/lib-cosmic-relayer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Bridge from Node.js to the Cosmos IBC relayer",
   "main": "index.js",
   "scripts": {
