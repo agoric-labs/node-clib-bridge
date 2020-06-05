@@ -7,17 +7,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type DeliverMsg struct {
-	Msg  string `json:"msg"`
-	Type string `json:"type"`
-}
-
 type DeliverMsgsAction struct {
-	SrcMsgs []DeliverMsg `json:"src_msgs"`
-	Src     PathEnd      `json:"src"`
-	DstMsgs []DeliverMsg `json:"dst_msgs"`
-	Dst     PathEnd      `json:"dst"`
-	Type    string       `json:"type"`
+	SrcMsgs   []string `json:"src_msgs"`
+	Src       PathEnd  `json:"src"`
+	DstMsgs   []string `json:"dst_msgs"`
+	Dst       PathEnd  `json:"dst"`
+	Last      bool     `json:"last"`
+	Succeeded bool     `json:"succeeded"`
+	Type      string   `json:"type"`
 }
 
 // RelayMsgs contains the msgs that need to be sent to both a src and dst chain
@@ -26,8 +23,8 @@ type RelayMsgs struct {
 	Src []sdk.Msg `json:"src"`
 	Dst []sdk.Msg `json:"dst"`
 
-	last    bool
-	success bool
+	Last      bool `json:"last"`
+	Succeeded bool `json:"success"`
 }
 
 // Ready returns true if there are messages to relay
@@ -44,30 +41,64 @@ func (r *RelayMsgs) Ready() bool {
 
 // Success returns the success var
 func (r *RelayMsgs) Success() bool {
-	return r.success
+	return r.Succeeded
 }
 
 // Send sends the messages with appropriate output
-func (r *RelayMsgs) Send(src, dst *Chain) bool {
-	if SendToController != nil {
-		action := &DeliverMsgsAction{
-			SrcMsgs: MarshalMsgs(r.Src),
-			Src:     MarshalChain(src),
-			DstMsgs: MarshalMsgs(r.Dst),
-			Dst:     MarshalChain(dst),
-			Type:    "RELAYER_SEND",
+func (r *RelayMsgs) Send(src, dst *Chain) {
+	r.SendWithController(src, dst, true)
+}
+
+func EncodeMsgs(c *Chain, msgs []sdk.Msg) []string {
+	outMsgs := make([]string, 0, len(msgs))
+	for _, msg := range msgs {
+		bz, err := c.Cdc.MarshalJSON(msg)
+		if err != nil {
+			fmt.Println("Cannot marshal message", msg, err)
+		} else {
+			outMsgs = append(outMsgs, string(bz))
 		}
+	}
+	return outMsgs
+}
+
+func DecodeMsgs(c *Chain, msgs []string) []sdk.Msg {
+	outMsgs := make([]sdk.Msg, 0, len(msgs))
+	for _, msg := range msgs {
+		var sm sdk.Msg
+		err := c.Cdc.UnmarshalJSON([]byte(msg), &sm)
+		if err != nil {
+			fmt.Println("Cannot unmarshal message", err)
+		} else {
+			outMsgs = append(outMsgs, sm)
+		}
+	}
+	return outMsgs
+}
+
+func (r *RelayMsgs) SendWithController(src, dst *Chain, useController bool) {
+	if useController && SendToController != nil {
+		action := &DeliverMsgsAction{
+			Src:       MarshalChain(src),
+			Dst:       MarshalChain(dst),
+			Last:      r.Last,
+			Succeeded: r.Succeeded,
+			Type:      "RELAYER_SEND",
+		}
+
+		action.SrcMsgs = EncodeMsgs(src, r.Src)
+		action.DstMsgs = EncodeMsgs(dst, r.Dst)
 
 		// Get the messages that are actually sent.
 		cont, err := ControllerUpcall(&action)
 		if !cont {
 			if err != nil {
 				fmt.Println("Error calling controller", err)
-				r.success = false
+				r.Succeeded = false
 			} else {
-				r.success = true
+				r.Succeeded = true
 			}
-			return r.success
+			return
 		}
 	}
 
@@ -96,16 +127,10 @@ func (r *RelayMsgs) Send(src, dst *Chain) bool {
 		} else {
 			// NOTE: Add more data to this such as identifiers
 			dst.LogSuccessTx(res, r.Dst)
-
 		}
 	}
 
-	if failed {
-		r.success = false
-		return r.success
-	}
-	r.success = true
-	return r.success
+	r.Succeeded = !failed
 }
 
 func getMsgAction(msgs []sdk.Msg) string {

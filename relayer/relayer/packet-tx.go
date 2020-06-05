@@ -65,7 +65,7 @@ func RelayPacketsOrderedChan(src, dst *Chain, sh *SyncHeaders, sp *RelaySequence
 
 	// TODO: increase the amount of gas as the number of messages increases
 	// notify the user of that
-	if msgs.Send(src, dst); msgs.success {
+	if msgs.Send(src, dst); msgs.Success() {
 		if len(msgs.Dst) > 1 {
 			dst.logPacketsRelayed(src, len(msgs.Dst)-1)
 		}
@@ -215,7 +215,7 @@ func (src *Chain) SendTransferMsg(dst *Chain, amount sdk.Coin, dstAddr sdk.AccAd
 		Dst: []sdk.Msg{},
 	}
 
-	if txs.Send(src, dst); !txs.success {
+	if txs.Send(src, dst); !txs.Success() {
 		return fmt.Errorf("failed to send transfer message")
 	}
 	return nil
@@ -240,7 +240,7 @@ func (src *Chain) SendPacket(dst *Chain, packetData []byte) error {
 		Dst: []sdk.Msg{},
 	}
 
-	if txs.Send(src, dst); !txs.success {
+	if txs.Send(src, dst); !txs.Success() {
 		return fmt.Errorf("failed to send packet")
 	}
 	return nil

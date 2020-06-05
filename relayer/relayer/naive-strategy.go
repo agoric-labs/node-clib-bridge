@@ -166,7 +166,7 @@ func sendTxFromEventPackets(src, dst *Chain, rlyPackets []relayPacket, sh *SyncH
 			txs.Src = append(txs.Src, rp.Msg(src, dst))
 		}
 
-		if txs.Send(src, dst); !txs.success {
+		if txs.Send(src, dst); !txs.Success() {
 			return fmt.Errorf("failed to send packets")
 		}
 		return nil
@@ -223,7 +223,7 @@ func (nrs *NaiveStrategy) RelayPacketsOrderedChan(src, dst *Chain, sp *RelaySequ
 
 	// TODO: increase the amount of gas as the number of messages increases
 	// notify the user of that
-	if msgs.Send(src, dst); msgs.success {
+	if msgs.Send(src, dst); msgs.Success() {
 		if len(msgs.Dst) > 1 {
 			dst.logPacketsRelayed(src, len(msgs.Dst)-1)
 		}

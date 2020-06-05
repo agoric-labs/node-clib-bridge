@@ -28,7 +28,7 @@ func (src *Chain) CreateConnection(dst *Chain, to time.Duration) error {
 		switch {
 		// In the case of success and this being the last transaction
 		// debug logging, log created connection and break
-		case connSteps.success && connSteps.last:
+		case connSteps.Success() && connSteps.Last:
 			if src.debug {
 				conns, err := QueryConnectionPair(src, dst, 0, 0)
 				if err != nil {
@@ -42,11 +42,11 @@ func (src *Chain) CreateConnection(dst *Chain, to time.Duration) error {
 				dst.ChainID, dst.PathEnd.ClientID, dst.PathEnd.ConnectionID))
 			return nil
 		// In the case of success, reset the failures counter
-		case connSteps.success:
+		case connSteps.Success():
 			failed = 0
 			continue
 		// In the case of failure, increment the failures counter and exit if this is the 3rd failure
-		case !connSteps.success:
+		case !connSteps.Success():
 			failed++
 			if failed > 2 {
 				return fmt.Errorf("! Connection failed: [%s]client{%s}conn{%s} -> [%s]client{%s}conn{%s}",
@@ -63,7 +63,7 @@ func (src *Chain) CreateConnection(dst *Chain, to time.Duration) error {
 // with the given identifier between chains src and dst. If handshake hasn't started,
 // CreateConnetionStep will start the handshake on src
 func (src *Chain) CreateConnectionStep(dst *Chain) (*RelayMsgs, error) {
-	out := &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, last: false}
+	out := &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, Last: false}
 
 	if err := src.PathEnd.Validate(); err != nil {
 		return nil, src.ErrCantSetPath(err)
@@ -167,7 +167,7 @@ func (src *Chain) CreateConnectionStep(dst *Chain) (*RelayMsgs, error) {
 			src.PathEnd.UpdateClient(hs[dcid], src.MustGetAddress()),
 			src.PathEnd.ConnConfirm(conn[dcid], src.MustGetAddress()),
 		)
-		out.last = true
+		out.Last = true
 
 	// Handshake has confirmed on src (3 steps done), relay `connOpenConfirm` and `updateClient` to dst end
 	case conn[scid].Connection.State == ibctypes.OPEN && conn[dcid].Connection.State == ibctypes.TRYOPEN:
@@ -178,7 +178,7 @@ func (src *Chain) CreateConnectionStep(dst *Chain) (*RelayMsgs, error) {
 			dst.PathEnd.UpdateClient(hs[scid], dst.MustGetAddress()),
 			dst.PathEnd.ConnConfirm(conn[scid], dst.MustGetAddress()),
 		)
-		out.last = true
+		out.Last = true
 	}
 
 	return out, nil

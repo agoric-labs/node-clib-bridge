@@ -35,7 +35,7 @@ func (src *Chain) CreateChannel(dst *Chain, ordered bool, to time.Duration) erro
 		switch {
 		// In the case of success and this being the last transaction
 		// debug logging, log created connection and break
-		case chanSteps.success && chanSteps.last:
+		case chanSteps.Success() && chanSteps.Last:
 			chans, err := QueryChannelPair(src, dst, 0, 0)
 			if err != nil {
 				return err
@@ -48,11 +48,11 @@ func (src *Chain) CreateChannel(dst *Chain, ordered bool, to time.Duration) erro
 				dst.ChainID, dst.PathEnd.ChannelID, dst.PathEnd.PortID))
 			return nil
 		// In the case of success, reset the failures counter
-		case chanSteps.success:
+		case chanSteps.Success():
 			failures = 0
 			continue
 		// In the case of failure, increment the failures counter and exit if this is the 3rd failure
-		case !chanSteps.success:
+		case !chanSteps.Success():
 			failures++
 			if failures > 2 {
 				return fmt.Errorf("! Channel failed: [%s]chan{%s}port{%s} -> [%s]chan{%s}port{%s}",
@@ -70,7 +70,7 @@ func (src *Chain) CreateChannel(dst *Chain, ordered bool, to time.Duration) erro
 // will begin the handshake on the src chain
 func (src *Chain) CreateChannelStep(dst *Chain, ordering ibctypes.Order) (*RelayMsgs, error) {
 	var (
-		out        = &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, last: false}
+		out        = &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, Last: false}
 		scid, dcid = src.ChainID, dst.ChainID
 	)
 
@@ -151,7 +151,7 @@ func (src *Chain) CreateChannelStep(dst *Chain, ordering ibctypes.Order) (*Relay
 			src.PathEnd.UpdateClient(hs[dcid], src.MustGetAddress()),
 			src.PathEnd.ChanConfirm(chans[dcid], src.MustGetAddress()),
 		)
-		out.last = true
+		out.Last = true
 
 	// Handshake has confirmed on src (3 steps done), relay `chanOpenConfirm` and `updateClient` to dst
 	case chans[scid].Channel.State == ibctypes.OPEN && chans[dcid].Channel.State == ibctypes.TRYOPEN:
@@ -162,7 +162,7 @@ func (src *Chain) CreateChannelStep(dst *Chain, ordering ibctypes.Order) (*Relay
 			dst.PathEnd.UpdateClient(hs[scid], dst.MustGetAddress()),
 			dst.PathEnd.ChanConfirm(chans[scid], dst.MustGetAddress()),
 		)
-		out.last = true
+		out.Last = true
 	}
 
 	return out, nil
@@ -183,7 +183,7 @@ func (src *Chain) CloseChannel(dst *Chain, to time.Duration) error {
 			break
 		}
 
-		if closeSteps.Send(src, dst); closeSteps.success && closeSteps.last {
+		if closeSteps.Send(src, dst); closeSteps.Success() && closeSteps.Last {
 			chans, err := QueryChannelPair(src, dst, 0, 0)
 			if err != nil {
 				return err
@@ -205,7 +205,7 @@ func (src *Chain) CloseChannel(dst *Chain, to time.Duration) error {
 // will begin the handshake on the src chain
 func (src *Chain) CloseChannelStep(dst *Chain) (*RelayMsgs, error) {
 	var (
-		out        = &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, last: false}
+		out        = &RelayMsgs{Src: []sdk.Msg{}, Dst: []sdk.Msg{}, Last: false}
 		scid, dcid = src.ChainID, dst.ChainID
 	)
 
@@ -260,7 +260,7 @@ func (src *Chain) CloseChannelStep(dst *Chain) (*RelayMsgs, error) {
 				dst.PathEnd.UpdateClient(hs[scid], dst.MustGetAddress()),
 				dst.PathEnd.ChanCloseConfirm(chans[scid], dst.MustGetAddress()),
 			)
-			out.last = true
+			out.Last = true
 		}
 
 	// Closing handshake has started on dst, relay `updateClient` and `chanCloseConfirm` to src
@@ -273,7 +273,7 @@ func (src *Chain) CloseChannelStep(dst *Chain) (*RelayMsgs, error) {
 				src.PathEnd.UpdateClient(hs[dcid], src.MustGetAddress()),
 				src.PathEnd.ChanCloseConfirm(chans[dcid], src.MustGetAddress()),
 			)
-			out.last = true
+			out.Last = true
 		}
 	}
 	return out, nil

@@ -45,7 +45,7 @@ func (src *Chain) CreateClients(dst *Chain) (err error) {
 
 	// Send msgs to both chains
 	if clients.Ready() {
-		if clients.Send(src, dst); clients.success {
+		if clients.Send(src, dst); clients.Success() {
 			src.Log(fmt.Sprintf("★ Clients created: [%s]client(%s) and [%s]client(%s)",
 				src.ChainID, src.PathEnd.ClientID, dst.ChainID, dst.PathEnd.ClientID))
 		}

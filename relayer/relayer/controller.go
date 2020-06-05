@@ -15,5 +15,21 @@ func ControllerUpcall(action interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return ret == "true", nil
+	var vi interface{}
+	if err = json.Unmarshal([]byte(ret), &vi); err != nil {
+		return false, err
+	}
+
+	truthy := vi != nil
+	if truthy {
+		switch v := vi.(type) {
+		case bool:
+			truthy = v
+		case float64:
+			truthy = v != 0
+		case string:
+			truthy = v != ""
+		}
+	}
+	return truthy, nil
 }

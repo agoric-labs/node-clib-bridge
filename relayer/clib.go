@@ -95,22 +95,21 @@ func SendToClib(port C.int, str C.Body) C.Body {
 	if err == nil {
 		switch action.Type {
 		case "RELAYER_SEND":
-			rm := relayer.RelayMsgs{
-				Src: relayer.UnmarshalMsgs(action.SrcMsgs),
-				Dst: relayer.UnmarshalMsgs(action.DstMsgs),
-			}
 			src := relayer.UnmarshalChain(action.Src)
 			dst := relayer.UnmarshalChain(action.Dst)
 			if src == nil || dst == nil {
 				return C.CString("false")
 			}
-			{
-				orig := relayer.SendToController
-				relayer.SendToController = nil
-				defer func() { relayer.SendToController = orig }()
-				if !rm.Send(src, dst) {
-					return C.CString("0")
-				}
+			rm := relayer.RelayMsgs{
+				Succeeded: action.Succeeded,
+				Last:      action.Last,
+			}
+			rm.Src = relayer.DecodeMsgs(src, action.SrcMsgs)
+			rm.Dst = relayer.DecodeMsgs(dst, action.DstMsgs)
+
+			rm.SendWithController(src, dst, false)
+			if !rm.Succeeded {
+				return C.CString("0")
 			}
 			return C.CString(fmt.Sprintf("%d", len(rm.Src)+len(rm.Dst)))
 		default:
