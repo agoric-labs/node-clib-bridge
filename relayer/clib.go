@@ -30,29 +30,26 @@ var singleton bool
 
 //export RunClib
 func RunClib(nodePort C.int, toNode C.sendFunc, clibArgs []*C.char) C.int {
-	if singleton {
-		fmt.Println("Can only have one instance of relayer library")
-		os.Exit(1)
-	}
-	singleton = true
-	relayer.SendToController = func(needReply bool, str string) (string, error) {
-		var rPort int
-		if needReply {
-			lastReply++
-			rPort = lastReply
-			replies[rPort] = make(chan goReturn)
-		}
-		// Send the message.
-		C.invokeSendFunc(toNode, nodePort, C.int(rPort), C.CString(str))
-		if !needReply {
-			// Return immediately
-			return "<no-reply-requested>", nil
-		}
+	if relayer.SendToController == nil {
+		relayer.SendToController = func(needReply bool, str string) (string, error) {
+			var rPort int
+			if needReply {
+				lastReply++
+				rPort = lastReply
+				replies[rPort] = make(chan goReturn)
+			}
+			// Send the message.
+			C.invokeSendFunc(toNode, nodePort, C.int(rPort), C.CString(str))
+			if !needReply {
+				// Return immediately
+				return "<no-reply-requested>", nil
+			}
 
-		// Block the sending goroutine while we wait for the reply
-		ret := <-replies[rPort]
-		delete(replies, rPort)
-		return ret.str, ret.err
+			// Block the sending goroutine while we wait for the reply
+			ret := <-replies[rPort]
+			delete(replies, rPort)
+			return ret.str, ret.err
+		}
 	}
 
 	args := make([]string, len(clibArgs))
@@ -63,7 +60,10 @@ func RunClib(nodePort C.int, toNode C.sendFunc, clibArgs []*C.char) C.int {
 	go func() {
 		os.Args = args
 		cmd.Execute()
-		os.Exit(0)
+		// fmt.Printf("exiting with nodePort %d\n", nodePort)
+		if nodePort == 0 {
+			os.Exit(0)
+		}
 	}()
 
 	clibPort++
